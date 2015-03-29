@@ -119,3 +119,77 @@ When we are working with a spreadsheet program we can use such a **declaration**
 The declarative approach is a lot simpler and easier to understand by other developers. **The semantics of the relationship are visible from this formula.** 
 In the imperative example we need to read the code and figure out the relationship between A, B and C.
 
+So now that we've discussed **declarative** code and **imperative** code in the abstract, let's go back to our example app with the enabled/disabled textfields and buttons.
+
+#(12) Imperative Code
+
+What does the imperative implementation of our example look like? 
+
+Exactly as we've illustrated it earlier. Using callbacks and delegation are examples of using imperative code.
+
+#(13) Imperative State propagation
+
+Looking at this diagram now, it is very similar to the **imperative** approach of solving the spreadsheet problem.
+
+We have different events that trigger a sequence of instructions. The goal of these intructions sequences are to move the view from one state to another. Similar to the spreadsheet, where the relationship between the columns was not obvious when using the imperative approach, the relationship between inputs and state of individual components is not obvious here.
+
+#(14) Declarative
+
+What would a declarative solution look like?
+What is the equivalent to describing the relationship between columns in a spreadsheet?
+
+#(15) FRP in a nutshell
+
+This is the basic structure of a code using principles of FRP.
+
+Each row describes how the state of an individual component can be **derived**. On the right hand side we can see the different **event emitters** that influence the state of the component.
+
+All of the events of these event emitters feed into a single **decision mechanism** that is responsible for deriving the state of the UI component based on the latest event. 
+
+For example in the first row, if the last event delivered was a Network Error Callback, we want to enable the textfield so that the user can modify the entered username and perform a new request.
+
+##Next animation step
+
+The decide mechanism is **referentially transparent**. This means, given the same input it will always produce the same output. 
+
+The mechanism doesn't consider any outside state. It derives the state of the UI component solely from the latest incoming event. This makes the behavior of the decide mechanism predictable. This also takes a lot of burden of the developer and reduces room for error. We no longer need to reset state manually. Once the relationship between event and state is declared the FRP framework will garantuee and implement that declared relationship. 
+
+##Next animation step
+
+This diagram illustrates the two main aspects of Functional Reactive Programming. 
+
+The code is **reactive** because it responds to events. The state deriving mechanism is triggered whenever one of the event emitters produce a new event.
+
+The code is **functional** because we use a referentially transparent function to derive state in our application. Later we will also see that FRP provides higher order functions, another aspect of FP, to transform emitted event values.
+
+#(16) Derived State
+
+This is very different from pure FP. Having state in FRP is absolutely fine as long as it is derived state.
+
+#(17) Reactive Cocoa
+For now he have covered enough of the theory of FRP to dive into a framework that brings FRP to iOS: Reactive Cocoa.
+
+It provides the tools to implement the FRP architecture that we discussed.
+
+I hope you aren't too disappointed, but throghout the remaining slides of this talk you will see Objective-C code.
+
+As of today, Reactive Cocoa 2 is the latest supported major release. It is entirely written in Objective-C and has some compatibilty issues with Swift code.
+
+Reactive Cocoa 3 is currently under development. The first alpha was released about 2 weeks ago (mid march). It provides a pure Swift API but it isn't ready for production use yet, and therefore wasn't an option for this talk.
+
+RAC 3 will bring some semantical changes to the API, however I think at this point learning RAC 2 first makes a lot of sense. Similar as it makes sense to learn Objective-C along with Swift.
+
+If you like RAC 2, I'm sure you will love RAC 3. It cleans up some parts of the API and it makes use of Swift features, most importantly Generics. As we'll go through the example code on the next slides, you will see how Generics will be very benefitial for this API.
+
+Let's get to know the framework!
+
+#(18) Signals
+
+Signals are **the** core concept that is used for programming in Reactive Cocoa. They provide a unified interface for different types of *future values*. 
+
+Signals can wrap callbacks, delegate methods, KVO.
+
+Throughout the next slides you'll see why this is extremely useful. Now let's look at some API level details of Signals in Reactive Cocoa.
+
+
+
