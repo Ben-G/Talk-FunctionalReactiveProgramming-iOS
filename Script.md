@@ -477,3 +477,50 @@ Networking is another great use case for RAC and is the main reason I originally
 
 #(49) Wrapping network requests into Signals
 
+Here's an example from the Demo project where I'm wrapping a `STTwitterAPI` call into a RACSignal. We create a Signal with the `createSignal` method. That gives us a reference to a subscriber. We are responsible for sending the `sendNext`, `sendCompleted` and `sendError` messages to that subscriber.
+Here it means adding the according method calls to the callback blocks.
+
+Additionally the `createSignal` requires us to return a `RACDisposable`. A `RACDisposable` allows us to provide a block of code that is executed when the Signal is cancelled in case the subscriber unsubscribes. In this specific case the `STTwitterAPI` doesn't provide an API to cancel the request, so we cannot create a Disposable that would cancel the request - instead we return `nil`.
+
+This illustrates how you can bridge non-RAC code into the RAC World.
+
+#(50) MMVM - Check
+
+We have covered a lot now. We've discussed how to build a highly interactive RAC app that responds to User input and performs network requests. We've also seen how the MMVM architecture works in combination with bindings.
+
+#(51) Testing
+
+One last aspect I want to cover briefly is testing RAC code, because I think it's another are where FRP and MMVM makes your life easier.
+
+#(52) Testing UI without UIKit
+
+Here I've picked an example test case that involves the UI, a part of our codebase that is typically harder to test. 
+
+Using RAC and MVVM we can almost always resort to testing the ViewModel instead of the View. This means we don't need to stage UIKit components or emulate touch events. 
+
+Obviously this runs into limitations when you want to test sophisticated animations, but it should make the bulk of your tests easier.
+
+Additionally Signals give you a good starting point for deciding what to test. Building an App that relies heavliy on RAC means that by testing all Signals you will have fantastic test coverage. And Signals are pretty easy to test since they do not rely on global state but only on the values emitted by events.
+
+In this example we want to test that the twitterClient is called. So I create a twitter mock object that returns a very simple signal. Then I initialize the PersonAddingViewModel with the mock twitter client. Then we set a username search text and execute the `addTwitterButtonCommand`. 
+
+All we need to verify is that `twitterMock` received `infoForUsername` call.
+Staging this test is straightforward even though it involves UI and talking to the networking code. RAC drives the design of our app to be fairly easy testable.
+
+#(53) Summary
+
+Let's sum all of this up.
+
+#(54) Reactive Derived State
+
+After talking a lot about implementaiton details and features of the RAC API I want to come back to the original motivation for exploring FRP. Instead of having dispersed, imperative state handling code we can work with declarative code.
+
+RAC provides us with tools to describe relationships between events, values and state, taking a lot of burden of the developer and reducing the likelyhood of bugs.
+
+#(55)
+#(56)
+#(57) Dijkstra
+I want to close with a quote from a very famous computer scientist. He obviously was not talking about Functional Reactive Programming, but instead was arguing that the use of GOTO statement was a bad practice.
+
+However, this quote fits amazingly well to the comparison of FRP and imperative programming. FRP enables us to write declarative code with **static** relations. Imperative code requires us to **know** how state and codepaths evolve over time.
+#(58) 
