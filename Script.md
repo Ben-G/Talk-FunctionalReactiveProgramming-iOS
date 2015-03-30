@@ -357,4 +357,73 @@ The code in the ViewModel is more interesting, since it's the component that pro
 
 #(35) PersonAddingViewModel - Button enabled signal
 
+Here you can see how the signal that enables/disables the button is impleted. 
+Since this signal depends on the search text that is entered, we start with a signal that captures changes to `usernameSearchText` by using the `RACObserve` macro. Then we use the `map` operator to map each of the text values that we receive into a boolean value.
+
+The latest search text get's handed into the map method as an argument. We check wether the text is empty or not and return an according boolean value.
+
+Voila! We have a signal that reacts to the search text and sends boolean values that describe wether the `add` button should be enabled or not.
+
+#(36) PersonAddingView - deactivated button
+
+Here you can see how View and ViewModel communicate on a conceptual level. 
+An empty text results in a deactivated button.
+
+#(37) PersonAddingView - activated button
+
+And a non-empty search text triggers our Signal to send a `YES` value to the view and enable the button.
+
+Now we've seen how we can use the MVVM architecture to build interactive views with RAC. 
+
+#(38) Networking with Reactive Cocoa
+
+Now let's look how we can integrate network requests into this example, another area where RAC shines in my oppinion.
+
+#(39) Example App Part 2
+
+We've covered the transition between the first two states shown here. Now I want to extend our example and look how we can kick off the network request and how to display the profile details upon successful response.
+
+#(40) PersonContainerView
+
+For this step it's important to understand the view hierarchy that I chose for the example project. I've decided to add a `PersonContainerView` that has a `PersonAddingView` **or** a `PersonDetailView` as a child, depending on the current state.
+
+So when the Twitter API request completes successfully the PersonContainerView needs to switch is child view from the `PersonAddingView` to the `PersonDetailView`.
+
+Let's start discussing the implementation by looking at the `RACCommand` that is attached to the add button in `PersonAddingView`.
+
+#(41) TwitterRACCommand
+
+This `addTwitterButtonCommand` is defined in the PersonAddingViewModel and it has two interesting components.
+
+#(42) TwitterRACCommand - Enabled
+
+Let's first take a look at these two highlighted lines. We are initializing a `RACCommand` and as port of the initializer we are handing in a signal. This is a feature of `RACCommand`, it allows us to provide a signal that determiens wether the command is enabled or not. Wether or not the `RACCommand` is enabled will automatically be reflected on the UI component to which the `RACCommand` is assigned.
+
+So *technically* this is the line of code that enables/disables the `twitterAddButtonCommand` and in turn the add button on the PersonAddingView.
+
+We could also bind the `addButtonEnabledSignal` to the button directly, but semantically it makes more sense to enable/disable the command and let the RAC framework handle the button state accordingly.
+
+#(43) TwitterRACCommand - Button Callback Code
+
+Now let's shift our focus to the inner block. This block gets invoked whenever the button is tapped and it is responsible for returning a signal. Here we are returning a signal by calling `infoForUsername` on the `twitterClient`.
+
+That method on the `twitterClient` kicks of an API request and returns a Signal that will emit values as soon as the API request finishes. We will discuss the implementation details of that method later on.
+
+##Animation step
+
+It might not be obvious, but it's amazing how little code is called when the add button is tapped. **We are doing exactly ONE thing, kicking of the network request**. Using traditional imperative code we would likely handle the callback in exactly the same place where we kick of the request.
+
+This results in **huge** code locality issues. As a response to this API call we need to create/update a person model and we need to have the PersonContainerView switch from the current view to the ProfileDetailView.
+
+Typically we would have the callback code here and we'd need to use delegation to communicate with the components that are *actually interested in the outcome of this request*. Using Signals we can focus on one thing here and let any component that needs to know about completed Twitter API requests subscribe. The `PersonAddingViewModel` doesn't need to know about the parties that are potentially interested, this component is decoupled a lot better than with a classic imperative approach.
+
+Now let's see how this request can be consumed by the PersonContainerViewModel in order to display the Person Details View.
+
+#(44) PersonContainerViewModel - UIState
+
+We have two steps going on here. Firstly, subscribing to the Signals emitted by tapping the add button. Secondly binding that Signal to the UIState.
+
+Let's look at how we subscribe to the Signal first.
+
+#(45) PersonContainerViewModel - Subscription
 
