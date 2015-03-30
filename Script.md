@@ -191,5 +191,124 @@ Signals can wrap callbacks, delegate methods, KVO.
 
 Throughout the next slides you'll see why this is extremely useful. Now let's look at some API level details of Signals in Reactive Cocoa.
 
+#(19) RACSignal
+
+A signal has four different states:
+
+- At first it is inactive
+- Then it becomes active and sends values through the *sendNext* method
+- The signal keeps sending values until:
+   - it errors and calls *sendError*
+   - it completes and calls *sendCompletes*
+   
+Signals by themselves aren't extremely interesting. They become intersting as soon as some *subscriber* subscribes to them. Whoever subscribes to a signal receives all emitted values and also gets informed when the signal errors or completes.
+   
+A signal could for example be an HTTP request that downloads 5 images. At some point the signal would become active, then it would retrieve one image at a time from a webservice, sending *sendNext:* for each of the images to each of its subscribers. Finally it would send the completed event.
+
+*Signals send values over time until they complete or error out*.
+
+Since the only the subscription makes a Signal useful, let's look at different ways to subscribe to and consume values emitted by Signals.
+
+#(20) Binding and subscribing
+
+There are two different ways to consume Signals. We can bind them OR we can subscribe to them. Understanding the difference is important, so let's dive right into the details.
+
+#(21) Binding
+
+Binding is the preferred way of consuming a Signal. The most typical form of binding in RAC is the binding of a signal to an object property.
+
+In this example we have a Signal that represents the text entered into a textfield, and the changes thereof. We bind this signal to the *email* property of a User object. This means, whenever the text updates, and thus the Signal sends a new value, the *email* stored with the user is updated to this new value.
+
+Using this type of binding we can avoid manually mutating variables and can instead let Signals drive these variable changes.
+
+Let's take short look at the code involved. We are using to different parts of the RAC API to accomplish this binding.
+
+Firstly, we are using the `rac_textSignal`. This an extension provided by RAC that wraps changes to the textfield's text into a Signal that we can consume. RAC provides many of these extensions that add signals to existing UIKit APIs.
+
+Secondly we are using the `RAC` macro. The `RAC` macro allows us to define a target object and a keypath on which a signal should operate. It allows us to use a signal on the right hand side of the assignment and the affected object + keypath on the left hand side.
+
+With this code in place, the text of the textfield is bound to the email property of the user in will automatically update it.
+
+No manual mutating, less errors. Now that we discussed the essentials of bindings let's take a look at *subscriptions*.
+
+#(22) Subscriptions
+
+Explicitly subscribing is another way of consuming a signal. Instead of binding a signal value to a property, we provide a *block* that is executed whenever the signal emits a new value.
+
+Subscriptions should only be used in rare cases as executing aribitrary code upon new signal values brings us back to imperative code. 
+
+Explicit subscriptions can be used to inject side effects, e.g. logging values. Side effects in FRP should be minimized, therefore explicit subscriptions should be minimized to.
+
+#(23) Prefer binding
+
+A reminder slide in case you'll review this presentation later. Explicit subscriptions are the first step back into the imperative world, avoid them as much as possible.
+
+Now that we have discussed Signals and Signal subcriptions in RAC let's go back to our demo app and let's take a look at some real world RAC code.
+
+#(24) Model-View binding
+
+Let's start with a simple example. One way bindings from the model to the view.
+
+#(25) Model-View binding code
+
+Here you can see a view from the example app. It displays the twitter profile information of a person that has been added to the user. 
+
+With our knowledge of RAC we know that we can use bindings to tie all of these subviews to the relevant properties of the person model.
+
+On this slide you can see a subset of the binding code for this view. In the first line we are binding the avatar property of the person to the avatarImageView. In the second line we are binding the person's name to a text label. The code involved here is pretty straightforward.
+
+The only new API call is `RACObserve`. `RACObserve` turns KVO notifications into a signal. The first argument is the object we are observing, the second argument is the keypath. 
+
+Looking at the first line, whenever the `model` or the `avatar` changes, the generated signal will emit a new value. Since the signal is bound to a view property, the view will update automatically.
+
+Theres another important thing worth mentioning. We don't need any code to check wether the `model` already has been set in this method. Without bindings we typically need to check that both the model and the view have been set/ set up before we can perform any of these assignments.
+
+Using bindings we can declare all the relationships *upfront* in the `awakeFromNib` and the view will be updated as soon as the model is available.
+
+#(26) Model-View binding - check 
+
+This was pretty straightforward. You could stop here and use RAC only for such kind of bindings and it already would be usfeul. But I want to dive into some more complex examples to show that entire apps can be built purely on FRP principles, not only small individual features.
+
+#(27) Model <-> Binding
+
+We have seen real world RAC code for simple, one way bindings without interactivity. As we've shown earlier FRP shines when it comes to implementing interactive features so let's look at some real world interactive code.
+
+We will need to take a short detour and discuss to aspects of the RAC API before moving on.
+
+#(28) Signal Operators
+
+A very powerful feature of RAC that you will use a lot when implementing more complex features are signal operators. Signal operators allow us to modify Signals and the values they carry, using declarative code.
+
+Throughout the code samples we will see a few operators and discuss how they work as we go.
+
+On this slide you can see the `map` operator. The map operator allows us to `map` each value of a stream to a new value. In this specific diagram I'm coming back to our earlier example. When we have an empty textfield we want to disable a button, when the textfield is filled we want to enable it.
+
+We could solve this problem with imperative code, but instead we can use the map operator to map the current value of the textfield to a corresponding boolean value. The mapping code is pretty simple, if the string is empty we return NO otherwise YES.
+
+You'll see code samples with operators shortly. Operators provide us with a powerful way of transforming signal values into representations that are useful for a specific binding, making imperative code unecessary in almost all cases. In this example `button.enabled` is not interested in the text itself, but only if it is empty or not, so we use an operator to map to a boolean value.
+
+#(29) RACCommand
+
+The last important part of RAC's API that we haven't yet discussed is `RACCommand`. 
+
+RACCommands are used to create Signals triggered by certain actions, in most cases user interactions. Not all Signals are set up as soon as the app or a view is instantiated.
+
+A typical example is a button that triggers a network request. We want to start the request when the button is tapped, therefore we create the Signal that wraps the network request as soon as the button is tapped.
+
+The `RACCommand` exposes two signals. One is the `Errors` signal, but I don't want to get into the details of error handling with `RACCommand` now. The important one for us is the `ExecutionSignals` Signal.
+
+It's a Signal of Signals. Whenever a button is tapped and a new signal is spawned, that new Signal is sent on the exection signals signal.
+
+Subscribing to RACCommand is interesting, because the subcriber can either subscribe to the Signal of Signals or to the inner Signals themselves. In most cases we only need to subscribe to the inner signal.
+
+Bringing this back to our example: When the user taps a button, a Signal is created and a network request is triggered. The subscriber immediately subscribes to that network request and gets informed when it sends new values or completes.
+
+I think the concept of `RACCommand` will become more obvious as we take a look at some code later on.
+
+#(30) Model <-> View Binding
+
+Now that we've discussed Signal Operators and RACCommands we have the toolset to understand interactive RAC code.
+
+#(31) MVVM
 
 
