@@ -377,7 +377,7 @@ Now we've seen how we can use the MVVM architecture to build interactive views w
 
 #(38) Networking with Reactive Cocoa
 
-Now let's look how we can integrate network requests into this example, another area where RAC shines in my oppinion.
+Now let's look how we can integrate network requests into this example, another area where RAC shines in my opinion.
 
 #(39) Example App Part 2
 
@@ -473,16 +473,7 @@ This is much more readable than nested callbacks! It's possible because error ha
 
 Used this way, RACSignals work similar to promises, we return a `RACSignal` immediately, the `RACSignal` will send a `Person` object as soon as all chained operations have been completed.
 
-Networking is another great use case for RAC and is the main reason I originally adopted the framework. To conclude the discussion of networking in RAC I want to show you how you wrap non RAC network requests into Signals, an important part of bridging Non-RAC code into the RAC world.
-
-#(49) Wrapping network requests into Signals
-
-Here's an example from the Demo project where I'm wrapping a `STTwitterAPI` call into a RACSignal. We create a Signal with the `createSignal` method. That gives us a reference to a subscriber. We are responsible for sending the `sendNext`, `sendCompleted` and `sendError` messages to that subscriber.
-Here it means adding the according method calls to the callback blocks.
-
-Additionally the `createSignal` requires us to return a `RACDisposable`. A `RACDisposable` allows us to provide a block of code that is executed when the Signal is cancelled in case the subscriber unsubscribes. In this specific case the `STTwitterAPI` doesn't provide an API to cancel the request, so we cannot create a Disposable that would cancel the request - instead we return `nil`.
-
-This illustrates how you can bridge non-RAC code into the RAC World.
+Networking is another great use case for RAC and is the main reason I originally adopted the framework. You can take a look at the example project to see how you can wrap non-reactive network request into Signals.
 
 #(50) MMVM - Check
 
@@ -490,7 +481,7 @@ We have covered a lot now. We've discussed how to build a highly interactive RAC
 
 #(51) Testing
 
-One last aspect I want to cover briefly is testing RAC code, because I think it's another are where FRP and MMVM makes your life easier.
+One last aspect I want to cover briefly is testing RAC code, because I think it's another area where FRP and MMVM makes your life easier.
 
 #(52) Testing UI without UIKit
 
