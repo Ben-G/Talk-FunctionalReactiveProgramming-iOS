@@ -427,3 +427,53 @@ Let's look at how we subscribe to the Signal first.
 
 #(45) PersonContainerViewModel - Subscription
 
+Let's discuss this Signal step by step. We start with a signal that observers the `personAddingViewModel` property of the PersonContainerViewModel. The `PersonAddingViewModel` is only created when necessary, not as soon as the container is created. Therefore we can only subscribe to the add button once the AddingViewModel has been initialized.
+
+On this Signal we use the `flattenMap` operator. Simplified we can say that `flattenMap` allows us to chain a signal to another, and send the values from the latest chained signal to the subscriber.
+
+So whenever the `personAddingViewModel` is set, we subscribe to the inner signal of the `addTwitterButtonCommand`. That means we are subscribing to the Signal of the twitter API request. Earlier we discussed that the `executionSignals` is a Signal of Signals that are spawned by button taps. By using the `concat` operator we subscribe to the inner signal, which is the network request itself.
+
+The result of all of this is that we have `twitterFetchSignal` that will send the latest values from the latest Twitter API request.
+
+Now how do we consume this signal?
+
+#(46) PersonContainerViewModel - UIState binding
+
+In this second step we are creating a new signal `UIStateSignal` that we bind to the `UIState` property. This signal uses the `twitterFetchSignal`, and we apply the `startWith` operator.
+
+The `startWith` operator creates a new Signal from a given Signal that returns the provided constant as it's first value. This means this Signal will always return `PersonCollectionReusableViewStateAddingTwitter` as first value, then all future values will be provided by the twitter fetch signal.
+
+The `startWith` operator is another great example of how we can avoid imperative code. Instead of explictly mutating the `UIState` we can define an initial value as part of our signal.
+
+After the signal is constructed we bind it to the `UIState` property.
+Now we we will always start in the `Adding` state, then switch to the details state as soon as the twitter request completes.
+
+There's additional code that handles the view replacing whenever the UIState changes, but we won't discuss it now.
+
+Last but not least we are also updating the person model. The twitter request returns a new person and we bind the person property of this ViewModel to the twitterRequestSignal.
+
+#(47) Network binding complete
+
+Now we have seen a pretty advanced feature that can be solved with RAC. Using Signals we can handle responses of network requests *where they need to be handled.* The place where the network request is started doesn't have to be the place where all responses are handled.
+
+Let's take a little closer look at the Twitter API request, RAC has some more advantages when it comes to networking that we haven't discussed yet.
+
+#(48) Chaining network requests
+
+Using the `flattenMap` operator we can chain operations without ending up in callback hell. Here you can see the `infoForUsername:` method that we are calling when the add button is tapped.
+
+We are performing 4 distinct operations:
+ 
+ 1. Authenticate with Twitter API
+ 2. Get user info
+ 3. Download avatar
+ 4. Construct a Person object
+
+This is much more readable than nested callbacks! It's possible because error handling happens in the subscriber. If any of the chained signals errors out, the error bubbles up to the subscriber. All errors can be handled in only one error block in one place.
+
+Used this way, RACSignals work similar to promises, we return a `RACSignal` immediately, the `RACSignal` will send a `Person` object as soon as all chained operations have been completed.
+
+Networking is another great use case for RAC and is the main reason I originally adopted the framework. To conclude the discussion of networking in RAC I want to show you how you wrap non RAC network requests into Signals, an important part of bridging Non-RAC code into the RAC world.
+
+#(49) Wrapping network requests into Signals
+
