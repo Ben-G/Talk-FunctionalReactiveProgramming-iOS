@@ -307,8 +307,54 @@ I think the concept of `RACCommand` will become more obvious as we take a look a
 
 #(30) Model <-> View Binding
 
-Now that we've discussed Signal Operators and RACCommands we have the toolset to understand interactive RAC code.
+Now that we've discussed Signal Operators and RACCommands we have the toolset to understand interactive RAC code. 
+
+So how do we typically architect interactive RAC code? It turns out that MVC is not the ideal architecture when working with RAC. 
+
+One of the main tasks of the Controller in an MVC architecture is to provide different callbacks, delegate methods etc. to build a relationship between the view and the model. With RAC we are trying to move away from imperative code, therefore the Controller doesn't really fit into our app architecture. We don't need a heayweight class that mediates between View and Model.
+
+So let's take a look at an alternative.
 
 #(31) MVVM
+
+Using FRP we can replace the Controller with a `ViewModel`. This brings us to a Model-View-ViewModel architecture. 
+
+With this architecture the view is extremely lightweight. All it does is bind to properties of the ViewModel.
+
+The ViewModel is the glue between the Model and the View. It stores the view state, e.g. which buttons are enabled or disabled. It tunnels the relevant properties of the model to the view. It also invokes methods on the business layer, e.g. network requests. 
+
+It's important to note that in this architecture Views and ViewControllers are considered part of the *View* layer. So you can either create custom views or ViewControllers.
+
+Let's not discuss this in theory all too long, instead let's look at the next feature of our example App that's been implemented on the MVVM architecture.
+
+#(32) Enabling/Disabling add button
+
+On this slide you can see the sequence of interactions for adding a new person in our example app. First, we'll focus on the first two steps. Allowing the user to enter a twitter handle and activating/deactivating the *add* button accordingly. We've already discussed this in theory, now let's take a look at the implementation.
+
+#(33) PersonAddingViewModel
+
+On this slide you can see how the View and the ViewModel for this feature are conencted. The View in this example is called the *PersonAddingView*.
+
+For this feature we have two relevant UI components in the view. The textfield and the add button.
+
+The textfield in the View is bound to a property called `usernameSearchText` in the ViewModel using a two-way-binding. This means that changes to either of the two are reflected to the other part of the binding. Updating the viewModel updates the textfield. Updating the textfield updates the ViewModel.
+
+The add button gets a RACCommand assigned to it. That RACCommand is provided by the ViewModel. The RACCommand contains the code that kicks of the request to the twitter API and looks up the usernae that has been entered.
+
+All of that code is implemented in the ViewModel, the view only sets the RACCommand on the UIButton.
+
+Additionally the ViewModel provides an `addButtonEnabledSignal`. That signal is used to determine if the add button is enabled or not, we'll get into the details in a second.
+
+Hopefully this example illustrates the role of the View and the ViewModel. The View is a very thin layer that binds to values and signals of the ViewModel.
+
+#(34) PersonAddingView - Initialization
+
+To show you just how thin the View layer is, here is some setup code from the `awakeFromNib` in the `PersonAddingView`. All we do here is take signals from the ViewModel and bind and assign them to UI components.
+
+`rac_command` is another RAC UIKit extension that allows us to hook up a RACCommand that is executed whenever a button is tapped.
+
+The code in the ViewModel is more interesting, since it's the component that provides the signals consumed by this view.
+
+#(35) PersonAddingViewModel - Button enabled signal
 
 
